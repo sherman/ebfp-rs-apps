@@ -1,9 +1,10 @@
-use std::{env, thread, time};
+use std::{env, time};
 use std::process;
 
 use futures::stream::StreamExt;
 use port_blocker::Data;
 use probes::port_blocker;
+use probes::port_blocker::LogEvent;
 use redbpf::{Array, load::Loaded, load::Loader, Map, xdp};
 use tokio::signal;
 use tracing::error;
@@ -65,6 +66,29 @@ async fn main() -> Result<(), String> {
         ports_array.set(index as u32, data).expect("Can't add port to ports array");
     }
 
+    let _ = tokio::spawn(async move {
+        while let Some((name, events)) = events.next().await {
+            for event in events {
+                match name.as_str() {
+                    "log_events" => {
+                        let log_value = unsafe {
+                            std::ptr::read(event.as_ptr() as *const LogEvent)
+                        };
+                        println!(
+                            "Blocked port event. From: {}:{} to {}:{}",
+                            log_value.src_addr,
+                            log_value.src_port,
+                            log_value.dest_addr,
+                            log_value.dest_port
+                        );
+                    }
+
+                    _ => println!("unexpected event"),
+                }
+            }
+        }
+    });
+
     loop {
         //println!("Port counter: {}", ports_array.get(0).unwrap().port);
         tokio::select! {
@@ -72,24 +96,9 @@ async fn main() -> Result<(), String> {
             _ = signal::ctrl_c() => {
                 break;
             }
-        };
-    }
-
-    /*let _ = tokio::spawn(async move {
-        while let Some((name, events)) = events.next().await {
-            for event in events {
-                match name.as_str() {
-                    "log_events" => {
-                        let log_value = unsafe { std::ptr::read(event.as_ptr() as *const usize) };
-                        println!("read log_value = {}", log_value);
-                    }
-
-                    _ => println!("unexpected event"),
-                }
-            }
         }
-    })
-        .await;*/
+        ;
+    }
 
     println!("Port blocker is completed.");
 
