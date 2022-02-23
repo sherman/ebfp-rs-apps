@@ -1,8 +1,6 @@
 #[cfg(feature = "std")]
 extern crate std;
 
-use ::core::fmt;
-use ::core::mem::transmute;
 #[cfg(feature = "std")]
 use std::net::Ipv4Addr;
 
@@ -47,17 +45,5 @@ impl From<u32> for BeIpv4Addr {
 impl From<Ipv4Addr> for BeIpv4Addr {
     fn from(ip: Ipv4Addr) -> Self {
         Self(u32::from_be_bytes(ip.octets()).swap_bytes())
-    }
-}
-
-impl fmt::Display for BeIpv4Addr {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let octets: [u8; 4] = unsafe { transmute::<u32, [u8; 4]>(self.0) };
-
-        write!(
-            f,
-            "{}.{}.{}.{}",
-            octets[0], octets[1], octets[2], octets[3]
-        )
     }
 }

@@ -1,4 +1,5 @@
 use std::{env, time};
+use std::net::{IpAddr, Ipv4Addr};
 use std::process;
 
 use futures::stream::StreamExt;
@@ -76,9 +77,9 @@ async fn main() -> Result<(), String> {
                         };
                         println!(
                             "Blocked port event. From: {}:{} to {}:{}",
-                            log_value.src_addr,
+                            log_value.src_addr.to_ip(),
                             log_value.src_port,
-                            log_value.dest_addr,
+                            log_value.dest_addr.to_ip(),
                             log_value.dest_port
                         );
                     }

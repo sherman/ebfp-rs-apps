@@ -14,6 +14,7 @@ cargo-bpf = { version = "2.3.0", default-features = false }
 [features]
 default = []
 probes = []
+std = []
 
 [lib]
 path = "src/lib.rs"
