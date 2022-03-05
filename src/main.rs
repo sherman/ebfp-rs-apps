@@ -38,6 +38,7 @@ async fn main() -> Result<(), String> {
 
     println!("Ports will be blocked: {:?}", ports);
 
+    // TODO: move to arguments?
     let interface = "lo";
 
     let loaded = Loader::load(probe_code())
@@ -45,12 +46,12 @@ async fn main() -> Result<(), String> {
 
     let Loaded { mut events, mut module } = loaded;
 
-    // pin array to sys fs
+    // pin ports array to sys fs
     module.map_mut(PORTS_ARRAY_NAME).expect("Can't find ports map")
         .pin(PORTS_ARRAY_PIN_FILE)
         .expect("error on pinning");
 
-    // attach
+    // attach xdp program
     for xdp in module.xdps_mut() {
         xdp.attach_xdp(interface, xdp_mode)
             .map_err(|err| format!("Attach error: {:?}", err))?;
@@ -66,6 +67,7 @@ async fn main() -> Result<(), String> {
         ports_array.set(index as u32, data).expect("Can't add port to ports array");
     }
 
+    // print events from xdp program
     tokio::spawn(async move {
         while let Some((name, events)) = events.next().await {
             for event in events {
@@ -101,12 +103,12 @@ async fn main() -> Result<(), String> {
 
     println!("Port blocker is completed.");
 
-    // unpin array to sys fs
+    // unpin ports array from sys fs
     module.map_mut(PORTS_ARRAY_NAME).expect("Can't find ports map")
         .unpin()
         .expect("error on unpinning");
 
-    // de-attach
+    // de-attach xdp program
     for xdp in module.xdps_mut() {
         println!("DeAttach xdp program {} on interface {}", xdp.name(), interface);
         let _ = xdp.detach_xdp(interface)
