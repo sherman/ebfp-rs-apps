@@ -1,5 +1,4 @@
 use std::{env, time};
-use std::net::{IpAddr, Ipv4Addr};
 use std::process;
 
 use futures::stream::StreamExt;
@@ -47,13 +46,13 @@ async fn main() -> Result<(), String> {
     let Loaded { mut events, mut module } = loaded;
 
     // pin array to sys fs
-    let _ = module.map_mut(PORTS_ARRAY_NAME).expect("Can't find ports map")
+    module.map_mut(PORTS_ARRAY_NAME).expect("Can't find ports map")
         .pin(PORTS_ARRAY_PIN_FILE)
         .expect("error on pinning");
 
     // attach
     for xdp in module.xdps_mut() {
-        let _ = xdp.attach_xdp(interface, xdp_mode)
+        xdp.attach_xdp(interface, xdp_mode)
             .map_err(|err| format!("Attach error: {:?}", err))?;
         println!("Attach port blocker on interface: {} with mode {:?}", interface, xdp_mode);
     }
@@ -67,7 +66,7 @@ async fn main() -> Result<(), String> {
         ports_array.set(index as u32, data).expect("Can't add port to ports array");
     }
 
-    let _ = tokio::spawn(async move {
+    tokio::spawn(async move {
         while let Some((name, events)) = events.next().await {
             for event in events {
                 match name.as_str() {
@@ -98,13 +97,12 @@ async fn main() -> Result<(), String> {
                 break;
             }
         }
-        ;
     }
 
     println!("Port blocker is completed.");
 
     // unpin array to sys fs
-    let _ = module.map_mut(PORTS_ARRAY_NAME).expect("Can't find ports map")
+    module.map_mut(PORTS_ARRAY_NAME).expect("Can't find ports map")
         .unpin()
         .expect("error on unpinning");
 

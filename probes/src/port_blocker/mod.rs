@@ -27,7 +27,7 @@ impl BeIpv4Addr {
     /// Conversion from `BeIpv4Addr` to `std::net::Ipv4Addr`.
     #[cfg(feature = "std")]
     pub fn to_ip(self) -> Ipv4Addr {
-        // Network order for the IP address will represent `127.0.0.1` as `[1, 0,  0, 127]`. We
+        // Network order for the IP address will represent `127.0.0.1` as `[1, 0, 0, 127]`. We
         // need to reverse the byte order before creating the `Ipv4Addr`.
         self.0.swap_bytes().into()
     }
